@@ -1,0 +1,42 @@
+version: '3'
+services:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - '/backend/data/grafana/env.grafana'
+    volumes:
+      - '/data/grafana:/var/lib/grafana'
+    links:
+      - influxdb
+    restart: always
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    env_file:
+      - '/backend/data/mysql/env.mysql'
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - '/data/mysql/data:/var/lib/mysql'
+      - '/data/mysql/etc:/etc/mysql/conf.d'
+    restart: always
+
+  api:
+    build:
+      context: /backend/data/python
+      dockerfile: Dockerfile
+    container_name: api
+    working_dir: /code
+    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+    ports:
+      - "5000:5000"
+    volumes:
+      - /data/python/app:/code
+    restart: always
+
