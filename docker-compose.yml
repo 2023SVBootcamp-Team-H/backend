@@ -1,4 +1,4 @@
-version: '3'
+version: '3.7'
 services:
   grafana:
     image: grafana/grafana:latest
@@ -6,9 +6,12 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - '/backend/data/grafana/env.grafana'
+      - './backend/data/grafana/env.grafana'
     volumes:
-      - '/data/grafana:/var/lib/grafana'
+      - './backend/data/grafana:/var/lib/grafana'
+    depends_on:
+      - prometheus
+    #user: root  
     restart: always
     networks:
       - promnet
@@ -18,14 +21,32 @@ services:
     ports:
       - "3306:3306"
     env_file:
-      - '/backend/data/mysql/env.mysql'
+      - './backend/data/mysql/env.mysql'
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     volumes:
-      - '/data/mysql/data:/var/lib/mysql'
-      - '/data/mysql/etc:/etc/mysql/conf.d'
+      - './backend/data/mysql/data:/var/lib/mysql'
+      - './backend/data/mysql/etc:/etc/mysql/conf.d'
     restart: always
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - 9100:9100
+    networks:
+      - promnet
+      
   prometheus:
     image: prom/prometheus
     container_name: prometheus
@@ -36,22 +57,26 @@ services:
       - 9090:9090
     command: # web.enalbe-lifecycle은 api 재시작없이 설정파일들을 reload 할 수 있게 해줌
       - '--web.enable-lifecycle'
+      - '--storage.tsdb.path=/prometheus'
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    #user: root
     restart: always
     networks:
       - promnet
-  api:
-    build:
-      context: /backend/data/python
-      dockerfile: Dockerfile
-    container_name: api
-    working_dir: /app
-    command: python manage.py runserver 0.0.0.0:5000
-    ports:
-      - "5000:5000"
-    volumes:
-      - /data/python:/app
-    restart: always
+  #api:
+  #  build:
+  #    context: /backend/data/python
+  #    dockerfile: Dockerfile
+  #  container_name: api
+  #  working_dir: /app
+  #  command: python manage.py runserver 0.0.0.0:5000
+  #  ports:
+  #    - "5000:5000"
+  #  volumes:
+  #    - /data/python:/app
+  #  restart: always
 
 networks:
   promnet:
