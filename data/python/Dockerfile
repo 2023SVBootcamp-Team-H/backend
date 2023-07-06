@@ -1,9 +1,9 @@
 FROM python:3.10
 
-WORKDIR /app
+WORKDIR /code
 
 RUN python -m venv server
-ENV PATH="/app/server/bin:$PATH"
+ENV PATH="/code/server/bin:$PATH"
 
 COPY backend/ .
 COPY ./requirements.txt .
