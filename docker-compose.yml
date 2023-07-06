@@ -65,18 +65,18 @@ services:
     restart: always
     networks:
       - promnet
-  #api:
-  #  build:
-  #    context: /backend/data/python
-  #    dockerfile: Dockerfile
-  #  container_name: api
-  #  working_dir: /app
-  #  command: python manage.py runserver 0.0.0.0:5000
-  #  ports:
-  #    - "5000:5000"
-  #  volumes:
-  #    - /data/python:/app
-  #  restart: always
+  api:
+   build:
+     context: /backend/data/django
+     dockerfile: Dockerfile
+   container_name: api
+   working_dir: /app
+   command: django manage.py runserver 0.0.0.0:5000
+   ports:
+     - "5000:5000"
+   volumes:
+     - /data/django:/app
+   restart: always
 
 networks:
   promnet:
