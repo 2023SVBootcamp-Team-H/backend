@@ -4,7 +4,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3000:3000"
+      - "3100:3100"
     env_file:
       # Linux
       # - './backend/data/grafana/env.grafana'
@@ -14,7 +14,7 @@ services:
     volumes:
       # Linux
       # - './backend/data/grafana:/var/lib/grafana'
-       
+      
       # Windows
       - './data/grafana:/var/lib/grafana'
     depends_on:
@@ -47,7 +47,7 @@ services:
     image: mysql:latest
     container_name: mysql
     ports:
-      - "3306:3306"
+      - "4406:4406"
     env_file:
       # Linux
       # - './backend/data/mysql/env.mysql'
@@ -58,8 +58,12 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
     volumes:
-      - './backend/data/mysql/data:/var/lib/mysql'
-      - './backend/data/mysql/etc:/etc/mysql/conf.d'
+      # Linux
+      # - './backend/data/mysql/data:/var/lib/mysql'
+      # - './backend/data/mysql/etc:/etc/mysql/conf.d'
+      # Windows
+      - './data/mysql/data:/var/lib/mysql'
+      - './data/mysql/etc:/etc/mysql/conf.d'
     restart: always
   node-exporter:
     image: prom/node-exporter:latest
@@ -78,13 +82,17 @@ services:
       - 9100:9100
     networks:
       - promnet
-      
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     volumes:
-      - ./backend/data/prometheus/config:/etc/prometheus
-      - ./backend/data/prometheus/volume:/prometheus
+      # Linux
+      # - ./backend/data/prometheus/config:/etc/prometheus
+      # - ./backend/data/prometheus/volume:/prometheus
+      
+      # Windows
+      - ./data/prometheus/config:/etc/prometheus
+      - ./data/prometheus/volume:/prometheus
     ports:
       - 9090:9090
     command: # web.enalbe-lifecycle은 api 재시작없이 설정파일들을 reload 할 수 있게 해줌
@@ -98,17 +106,17 @@ services:
     networks:
       - promnet
   api:
-   build:
-     context: /backend/data/django
-     dockerfile: Dockerfile
-   container_name: api
-   working_dir: /app
-   command: django manage.py runserver 0.0.0.0:5000
-   ports:
-     - "5000:5000"
-   volumes:
-     - /data/django:/app
-   restart: always
+    build:
+      context: data/django_project
+      dockerfile: Dockerfile
+    # image: sample_jango
+    container_name: api
+    command: python manage.py runserver 0.0.0.0:5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data/django_project/dontworry:/app
+    restart: always
 
 networks:
   promnet:
