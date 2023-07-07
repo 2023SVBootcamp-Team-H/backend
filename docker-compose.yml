@@ -15,6 +15,19 @@ services:
     restart: always
     networks:
       - promnet
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - './BrainWheel_BE/data/nginx/conf.d:/etc/nginx/conf.d'
+      - './BrainWheel_BE/data/nginx/nginx.conf:/etc/nginx/nginx.conf'
+      - './BrainWheel_BE/data/nginx/html:/usr/share/nginx/html'
+      - './BrainWheel_BE/data/nginx/logs:/var/log/nginx'
+    restart: always
+    networks:
+      - promnet
   mysql:
     image: mysql:latest
     container_name: mysql
@@ -65,18 +78,18 @@ services:
     restart: always
     networks:
       - promnet
-  #api:
-  #  build:
-  #    context: /backend/data/python
-  #    dockerfile: Dockerfile
-  #  container_name: api
-  #  working_dir: /app
-  #  command: python manage.py runserver 0.0.0.0:5000
-  #  ports:
-  #    - "5000:5000"
-  #  volumes:
-  #    - /data/python:/app
-  #  restart: always
+  api:
+   build:
+     context: /backend/data/django
+     dockerfile: Dockerfile
+   container_name: api
+   working_dir: /app
+   command: django manage.py runserver 0.0.0.0:5000
+   ports:
+     - "5000:5000"
+   volumes:
+     - /data/django:/app
+   restart: always
 
 networks:
   promnet:
