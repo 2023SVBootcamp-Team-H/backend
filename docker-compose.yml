@@ -4,7 +4,7 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
-      - "3100:3100"
+      - "3000:3000"
     env_file:
       # Linux
       # - './backend/data/grafana/env.grafana'
@@ -47,7 +47,7 @@ services:
     image: mysql:latest
     container_name: mysql
     ports:
-      - "4406:4406"
+      - "3306:3306"
     env_file:
       # Linux
       # - './backend/data/mysql/env.mysql'
