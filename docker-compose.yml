@@ -139,11 +139,12 @@ services:
     # image: sample_jango
     container_name: api
     command: >
-      chmod +x ./wait-for-it.sh 
+      sh -c
+      "chmod +x ./wait-for-it.sh 
       && ./wait-for-it.sh mysql:3306 -t 10
       && python manage.py makemigrations
       && python manage.py migrate
-      && python manage.py runserver 0.0.0.0:5000
+      && python manage.py runserver 0.0.0.0:5000"
     ports:
       - "5000:5000"
     restart: always
