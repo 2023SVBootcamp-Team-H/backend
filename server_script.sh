@@ -18,6 +18,8 @@ sudo apt install docker-compose -y
 
 # Django Project Clone
 cd ~
+sudo rm -rf backend/data/django_project
+mkdir -p backend/data/django_project
 cd backend/data/django_project
 git clone git@github.com:2023SVBootcamp-Team-H/backend_test.git .
 cd ~
