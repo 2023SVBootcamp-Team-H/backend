@@ -14,9 +14,6 @@ sudo systemctl restart vsftpd
 # cd backend/data/python
 # docker build -t api .
 # cd ~
-# cd backend/data/board
-# docker build -t board .
-# cd ~
 
 # Docker & Docker-Compose Install & Restart Services
 sudo apt install docker -y

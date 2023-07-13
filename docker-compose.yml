@@ -141,7 +141,7 @@ services:
     command: >
       sh -c "python manage.py makemigrations &&
             python manage.py migrate &&
-            python manage.py runserver 0.0.0.0:5000" 
+            gunicorn --bind 0:5000 config.wsgi:application" 
     ports:
       - "5000:5000"
     restart: always
