@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'category',
     'rest_framework',
     'drf_yasg',
+    'rank',
     'corsheaders',
     'django_prometheus',
 ]
@@ -93,16 +94,16 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     # MySQL
-    'default':{
-       'ENGINE': 'django_prometheus.db.backends.mysql',
-       'NAME': 'test',
-       'USER': 'root',
-       'PASSWORD': '5499458kK@',
-       'HOST': 'mysql',
-       'PORT': '3306',
-       'OPTIONS': {
-           'charset': 'utf8mb4',
-       }
+    'default': {
+        'ENGINE': 'django_prometheus.db.backends.mysql',
+        'NAME': 'test',
+        'USER': 'root',
+        'PASSWORD': '5499458kK@',
+        'HOST': 'mysql',
+        'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        }
     }
 }
 
