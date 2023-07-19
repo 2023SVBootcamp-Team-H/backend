@@ -20,7 +20,7 @@ scrape_configs:
   - job_name: 'node_exporter' # job_name 은 모든 scrap 내에서 고유해야함
     scrape_interval: 10s      # global에서 default 값을 정의해주었기 떄문에 안써도됨
     scrape_timeout: 10s       # global에서 default 값을 정의해주었기 떄문에 안써도됨
-    metrics_path: '/asdf'     # 옵션 - prometheus가 metrics를 얻기위해 참조하는 URI를 변경할 수 있음 | default = /metrics
+    metrics_path: '/metrics'     # 옵션 - prometheus가 metrics를 얻기위해 참조하는 URI를 변경할 수 있음 | default = /metrics
     honor_labels: false       # 옵션 - 라벨 충동이 있을경우 라벨을 변경할지설정(false일 경우 라벨 안바뀜) | default = false
     honor_timestamps: false   # 옵션 - honor_labels이 참일 경우, metrics timestamp가 노출됨(true일 경우) | default = false
     scheme: 'http'            # 옵션 - request를 보낼 scheme 설정 | default = http
