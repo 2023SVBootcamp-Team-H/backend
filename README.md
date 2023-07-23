@@ -18,6 +18,7 @@
 ### PORT
     3000 : Grafana
     9090 : Prometheus
+    8080 : cAdvisor
 
 ### Initialize
 `bash backend/monitoring_init.sh`

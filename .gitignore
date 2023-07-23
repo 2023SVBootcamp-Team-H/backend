@@ -161,3 +161,16 @@ cython_debug/
 #.idea/
 
 python/
+
+# Docker Grafana
+alerting/
+csv/
+plugins/
+png/
+grafana.db
+
+#Docker Prometheus
+query_log_file.log
+prometheus/volume/
+
+redis/

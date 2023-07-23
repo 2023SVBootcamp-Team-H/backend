@@ -21,4 +21,4 @@ sudo apt install docker-compose -y
 cp ~/backend/docker-compose.monitoring.yml ~/
 cd ~
 # Docker-Compose Up
-sudo docker-compose up -f docker-compose.monitoring.yml -d --build
+sudo docker-compose -f docker-compose.monitoring.yml up -d --build

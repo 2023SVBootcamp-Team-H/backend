@@ -42,3 +42,11 @@ scrape_configs:
   - job_name: django-app
     static_configs:
       - targets: ['34.195.3.25:5000']
+        labels:
+          service: 'django-app'
+  
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['34.195.3.25:8080']
+        labels:
+          service: 'cadvisor'

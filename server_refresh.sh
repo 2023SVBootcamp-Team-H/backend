@@ -18,5 +18,5 @@ cd ~
 cp -r ~/frontend/dist ~/backend/data/nginx/html
 cp ~/backend/docker-compose.prod.yml ~/
 
-sudo docker-compose down -f docker-compose.prod.yml
-sudo docker-compose up -f docker-compose.prod.yml -d --build
+sudo docker-compose -f docker-compose.prod.yml down 
+sudo docker-compose -f docker-compose.prod.yml up -d --build
