@@ -134,8 +134,9 @@ services:
     networks:
       - promnet
   api:
-    image: ghkd110/api:latest
-    # image: sample_jango
+    build:
+      context: backend/data/django_project
+      dockerfile: Dockerfile
     container_name: api
     command: >
       sh -c "python manage.py makemigrations &&
