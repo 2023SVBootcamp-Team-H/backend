@@ -1,98 +1,65 @@
 # Deploy Version
 version: '3.7'
 services:
+  cadvisor:
+      image: gcr.io/cadvisor/cadvisor:latest
+      container_name: cadvisor
+      ports:
+      - 8080:8080
+      volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      depends_on:
+      - prometheus
+      
   redis:
-      # 사용할 이미지
       image: redis:latest
-      # 컨테이너명
       container_name: redis
-      # 접근 포트 설정(컨테이너 외부:컨테이너 내부)
       ports:
         - 6379:6379
-      # 스토리지 마운트(볼륨) 설정
       volumes:
-        # Server
         - ./backend/data/redis/data:/data
         - ./backend/data/redis/conf/redis.conf:/usr/local/conf/redis.conf
-
-        # Local
-        # - ./data/redis/data:/data
-        # - ./data/redis/conf/redis.conf:/usr/local/conf/redis.conf
-
-      # 컨테이너에 docker label을 이용해서 메타데이터 추가
       labels:
         - "name=redis"
         - "mode=standalone"
-      # 컨테이너 종료시 재시작 여부 설정
       restart: always
       command: redis-server /usr/local/conf/redis.conf
       networks:
-        - promnet
+        - witchnet
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "3000:3000"
     env_file:
-      # Server
       - './backend/data/grafana/env.grafana'
-      
-      # Local
-      # - './data/grafana/env.grafana'
     volumes:
-      # Server
       - './backend/data/grafana:/var/lib/grafana'
-      
-      # Local
-      # - './data/grafana:/var/lib/grafana'
     depends_on:
       - prometheus
     user: root  
     restart: always
     networks:
-      - promnet
+      - witchnet
+
   nginx:
     image: nginx:latest
     container_name: nginx
     ports:
       - "80:80"
     volumes:
-      # Server
       - './backend/data/nginx/conf.d:/etc/nginx/conf.d'
       - './backend/data/nginx/nginx.conf:/etc/nginx/nginx.conf'
       - './backend/data/nginx/html:/usr/share/nginx/html'
       - './backend/data/nginx/logs:/var/log/nginx'
-      
-      # Local
-      # - './data/nginx/conf.d:/etc/nginx/conf.d'
-      # - './data/nginx/nginx.conf:/etc/nginx/nginx.conf'
-      # - './data/nginx/html:/usr/share/nginx/html'
-      # - './data/nginx/logs:/var/log/nginx'
     restart: always
     networks:
-      - promnet
-  mysql:
-    image: mysql:latest
-    container_name: mysql
-    ports:
-      - "3306:3306"
-    env_file:
-      # Server
-      - './backend/data/mysql/env.mysql'
-      
-      # Local
-      # - './data/mysql/env.mysql'
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
-    volumes:
-      # Server
-      - './backend/data/mysql/data:/var/lib/mysql'
-      - './backend/data/mysql/etc:/etc/mysql/conf.d'
-      # Local
-      # - './data/mysql/data:/var/lib/mysql'
-      # - './data/mysql/etc:/etc/mysql/conf.d'
-    restart: always
+      - witchnet
+
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -109,21 +76,17 @@ services:
     ports:
       - 9100:9100
     networks:
-      - promnet
+      - witchnet
+      
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     volumes:
-      # Server
       - ./backend/data/prometheus/config:/etc/prometheus
       - ./backend/data/prometheus/volume:/prometheus
-      
-      # Local
-      # - ./data/prometheus/config:/etc/prometheus
-      # - ./data/prometheus/volume:/prometheus
     ports:
       - 9090:9090
-    command: # web.enalbe-lifecycle은 api 재시작없이 설정파일들을 reload 할 수 있게 해줌
+    command:
       - '--web.enable-lifecycle'
       - '--storage.tsdb.path=/prometheus'
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -132,10 +95,12 @@ services:
     user: root
     restart: always
     networks:
-      - promnet
+      - witchnet
+
   api:
-    image: ghkd110/api:latest
-    # image: sample_jango
+    build:
+      context: backend/data/django_project
+      dockerfile: Dockerfile
     container_name: api
     command: >
       sh -c "python manage.py makemigrations &&
@@ -144,7 +109,9 @@ services:
     ports:
       - "5000:5000"
     restart: always
+    networks:
+      - witchnet
 
 networks:
-  promnet:
+  witchnet:
     driver: bridge

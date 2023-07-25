@@ -23,25 +23,7 @@ services:
       restart: always
       command: redis-server /usr/local/conf/redis.conf
       networks:
-        - promnet
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    env_file:
-      # Server
-      - './backend/data/grafana/env.grafana'
-      
-    volumes:
-      # Server
-      - './backend/data/grafana:/var/lib/grafana'
-    depends_on:
-      - prometheus
-    user: root  
-    restart: always
-    networks:
-      - promnet
+        - service_network
   nginx:
     image: nginx:latest
     container_name: nginx
@@ -55,7 +37,7 @@ services:
       - './backend/data/nginx/logs:/var/log/nginx'
     restart: always
     networks:
-      - promnet
+      - service_network
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -72,28 +54,12 @@ services:
     ports:
       - 9100:9100
     networks:
-      - promnet
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    volumes:
-      # Server
-      - ./backend/data/prometheus/config:/etc/prometheus
-      - ./backend/data/prometheus/volume:/prometheus
-    ports:
-      - 9090:9090
-    command: # web.enalbe-lifecycle은 api 재시작없이 설정파일들을 reload 할 수 있게 해줌
-      - '--web.enable-lifecycle'
-      - '--storage.tsdb.path=/prometheus'
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    user: root
-    restart: always
-    networks:
-      - promnet
+      - service_network
   api:
-    image: ghkd110/api:latest
+    # image: ghkd110/api:latest
+    build:
+      context: backend/data/django_project
+      dockerfile: Dockerfile
     container_name: api
     command: >
       sh -c "python manage.py makemigrations &&
@@ -101,8 +67,10 @@ services:
             gunicorn --bind 0:5000 config.wsgi:application" 
     ports:
       - "5000:5000"
+    networks:
+      - service_network
     restart: always
 
 networks:
-  promnet:
+  service_network:
     driver: bridge

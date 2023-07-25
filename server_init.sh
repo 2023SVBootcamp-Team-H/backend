@@ -1,4 +1,5 @@
-# Deploy script for AWS EC2 Ubuntu 22.04 LTS
+# Initialization for AWS EC2 Ubuntu 22.04 LTS
+# bash server_init.sh
 
 # Install VSFTPD
 sudo apt-get update -y
@@ -64,7 +65,7 @@ cd ~
 cp -r ~/frontend/dist ~/backend/data/nginx/html
 
 # Docker-Compose File Copy
-cp ~/backend/docker-compose.yml ~/
+cp ~/backend/docker-compose.prod.yml ~/
 
 # Docker-Compose Up
-sudo docker-compose up -d --build
+sudo docker-compose -f docker-compose.prod.yml up -d --build

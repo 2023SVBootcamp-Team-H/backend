@@ -32,7 +32,7 @@ scrape_configs:
 
     # 실제 scrap 하는 타겟에 관한 설정
     static_configs:
-      - targets: ['44.213.195.42:9100'] ## prometheus가 scrap할 대상을 설정 
+      - targets: ['34.195.3.25:9100'] ## prometheus가 scrap할 대상을 설정 
         labels: # 옵션 - scrap 해서 가져올 metrics 들 전부에게 붙여줄 라벨
           service : 'server-1'
     
@@ -41,4 +41,12 @@ scrape_configs:
   
   - job_name: django-app
     static_configs:
-      - targets: ['44.213.195.42:5000']
+      - targets: ['34.195.3.25:5000']
+        labels:
+          service: 'django-app'
+  
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['34.195.3.25:8080']
+        labels:
+          service: 'cadvisor'
