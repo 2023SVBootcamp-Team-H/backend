@@ -23,7 +23,7 @@ services:
       restart: always
       command: redis-server /usr/local/conf/redis.conf
       networks:
-        - service_network
+        - witches_net
   nginx:
     image: nginx:latest
     container_name: nginx
@@ -37,7 +37,7 @@ services:
       - './backend/data/nginx/logs:/var/log/nginx'
     restart: always
     networks:
-      - service_network
+      - witches_net
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -54,7 +54,7 @@ services:
     ports:
       - 9100:9100
     networks:
-      - service_network
+      - witches_net
   api:
     # image: ghkd110/api:latest
     build:
@@ -68,9 +68,9 @@ services:
     ports:
       - "5000:5000"
     networks:
-      - service_network
+      - witches_net
     restart: always
 
 networks:
-  service_network:
+  witches_net:
     driver: bridge

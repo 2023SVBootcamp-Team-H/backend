@@ -8,24 +8,24 @@ services:
         - "3000:3000"
       env_file:
         # Server
-        - './backend/monitoring/grafana/env.grafana'
+        - './backend/data/grafana/env.grafana'
         
       volumes:
         # Server
-        - './backend/monitoring/grafana:/var/lib/grafana'
+        - './backend/data/grafana:/var/lib/grafana'
       depends_on:
         - prometheus
       user: root  
       restart: always
       networks:
-        - monitoring
+        - witches_monitoring
   prometheus:
     image: prom/prometheus
     container_name: prometheus
     volumes:
       # Server
-      - ./backend/monitoring/prometheus/config:/etc/prometheus
-      - ./backend/monitoring/prometheus/volume:/prometheus
+      - ./backend/data/prometheus/config:/etc/prometheus
+      - ./backend/data/prometheus/volume:/prometheus
     ports:
       - 9090:9090
     command: # web.enalbe-lifecycle은 api 재시작없이 설정파일들을 reload 할 수 있게 해줌
@@ -37,7 +37,7 @@ services:
     user: root
     restart: always
     networks:
-      - monitoring
+      - witches_monitoring
   cadvisor:
       image: gcr.io/cadvisor/cadvisor:latest
       container_name: cadvisor
@@ -50,5 +50,5 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
       
 networks:
-  monitoring:
+  witches_monitoring:
     driver: bridge

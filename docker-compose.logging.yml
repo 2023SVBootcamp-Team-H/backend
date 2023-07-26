@@ -1,15 +1,10 @@
-# All Containers
-# Don't Use This File
-# Just See The Docker-Compose File
-# This File Is Just For Reference
-# Prod -> Monitoring -> ELK
 version: '3.7'
 services:
   setup:
     profiles:
       - setup
     build:
-      context: setup/
+      context: ELK/setup/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     init: true
@@ -36,7 +31,7 @@ services:
 
   elasticsearch:
     build:
-      context: elasticsearch/
+      context: ELK/elasticsearch/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     volumes:
@@ -61,7 +56,7 @@ services:
 
   logstash:
     build:
-      context: logstash/
+      context: ELK/logstash/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     volumes:
@@ -83,7 +78,7 @@ services:
 
   kibana:
     build:
-      context: kibana/
+      context: ELK/kibana/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     volumes:
@@ -100,7 +95,7 @@ services:
 
   filebeat:
     build:
-      context: ELK/extensions/filebeat/
+      context: ELK/filebeat/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     # Run as 'root' instead of 'filebeat' (uid 1000) to allow reading
@@ -114,7 +109,7 @@ services:
       # see: https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
       - --strict.perms=false
     volumes:
-      - ./ELK/extensions/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+      - ./ELK/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
       - ~/backend/data/nginx/logs:/var/log/nginx
     environment:
       FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
@@ -123,128 +118,7 @@ services:
       - elk
     depends_on:
       - elasticsearch
-
-  redis_insight:
-    image: redislabs/redisinsight:latest
-    container_name: redis_insight
-    ports: 
-      - "8001:8001"
-    restart: always
-
-  cadvisor:
-      image: gcr.io/cadvisor/cadvisor:latest
-      container_name: cadvisor
-      ports:
-      - 8080:8080
-      volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-      depends_on:
-      - prometheus
-      
-  redis:
-      image: redis:latest
-      container_name: redis
-      ports:
-        - 6379:6379
-      volumes:
-        - ./backend/data/redis/data:/data
-        - ./backend/data/redis/conf/redis.conf:/usr/local/conf/redis.conf
-      labels:
-        - "name=redis"
-        - "mode=standalone"
-      restart: always
-      command: redis-server /usr/local/conf/redis.conf
-      networks:
-        - witchnet
-
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    env_file:
-      - './backend/data/grafana/env.grafana'
-    volumes:
-      - './backend/data/grafana:/var/lib/grafana'
-    depends_on:
-      - prometheus
-    user: root  
-    restart: always
-    networks:
-      - witchnet
-
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - "80:80"
-    volumes:
-      - './backend/data/nginx/conf.d:/etc/nginx/conf.d'
-      - './backend/data/nginx/nginx.conf:/etc/nginx/nginx.conf'
-      - './backend/data/nginx/html:/usr/share/nginx/html'
-      - './backend/data/nginx/logs:/var/log/nginx'
-    restart: always
-    networks:
-      - witchnet
-
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: node-exporter
-    restart: unless-stopped
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command:
-      - '--path.procfs=/host/proc'
-      - '--path.rootfs=/rootfs'
-      - '--path.sysfs=/host/sys'
-      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
-    ports:
-      - 9100:9100
-    networks:
-      - witchnet
-      
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    volumes:
-      - ./backend/data/prometheus/config:/etc/prometheus
-      - ./backend/data/prometheus/volume:/prometheus
-    ports:
-      - 9090:9090
-    command:
-      - '--web.enable-lifecycle'
-      - '--storage.tsdb.path=/prometheus'
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    user: root
-    restart: always
-    networks:
-      - witchnet
-
-  api:
-    build:
-      context: backend/data/django_project
-      dockerfile: Dockerfile
-    container_name: api
-    command: >
-      sh -c "python manage.py makemigrations &&
-            python manage.py migrate &&
-            gunicorn --bind 0:5000 config.wsgi:application" 
-    ports:
-      - "5000:5000"
-    restart: always
-    networks:
-      - witchnet
-
 networks:
-  witchnet:
-    driver: bridge
   elk:
     driver: bridge
 
