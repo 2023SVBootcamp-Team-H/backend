@@ -10,4 +10,4 @@ output.logstash:
 setup.kibana:
   host: "http://34.195.3.25:5601"
   username: "elastic"
-  password: "hhselastic"
+  password: "changeme"
