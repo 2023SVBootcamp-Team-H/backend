@@ -9,7 +9,7 @@ services:
     profiles:
       - setup
     build:
-      context: setup/
+      context: ELK/setup/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     init: true
@@ -36,7 +36,7 @@ services:
 
   elasticsearch:
     build:
-      context: elasticsearch/
+      context: ELK/elasticsearch/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     volumes:
@@ -61,7 +61,7 @@ services:
 
   logstash:
     build:
-      context: logstash/
+      context: ELK/logstash/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     volumes:
@@ -83,7 +83,7 @@ services:
 
   kibana:
     build:
-      context: kibana/
+      context: ELK/kibana/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     volumes:
@@ -100,7 +100,7 @@ services:
 
   filebeat:
     build:
-      context: ELK/extensions/filebeat/
+      context: ELK/filebeat/
       args:
         ELASTIC_VERSION: ${ELASTIC_VERSION}
     # Run as 'root' instead of 'filebeat' (uid 1000) to allow reading
@@ -114,7 +114,7 @@ services:
       # see: https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
       - --strict.perms=false
     volumes:
-      - ./ELK/extensions/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+      - ./ELK/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
       - ~/backend/data/nginx/logs:/var/log/nginx
     environment:
       FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
