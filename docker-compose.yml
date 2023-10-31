@@ -1,0 +1,252 @@
+# All Containers
+# Don't Use This File
+# Just See The Docker-Compose File
+# This File Is Just For Reference
+# Prod -> Monitoring -> ELK
+version: '3.7'
+services:
+  setup:
+    profiles:
+      - setup
+    build:
+      context: ELK/setup/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    init: true
+    volumes:
+      - ./ELK/setup/entrypoint.sh:/entrypoint.sh:ro,Z
+      - ./ELK/setup/lib.sh:/lib.sh:ro,Z
+      - ./ELK/setup/roles:/roles:ro,Z
+    environment:
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+      METRICBEAT_INTERNAL_PASSWORD: ${METRICBEAT_INTERNAL_PASSWORD:-}
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      HEARTBEAT_INTERNAL_PASSWORD: ${HEARTBEAT_INTERNAL_PASSWORD:-}
+      MONITORING_INTERNAL_PASSWORD: ${MONITORING_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+      - kibana
+      - logstash
+      - filebeat
+
+  elasticsearch:
+    build:
+      context: ELK/elasticsearch/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./ELK/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+      - elasticsearch:/usr/share/elasticsearch/data:Z
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      # Bootstrap password.
+      # Used to initialize the keystore during the initial startup of
+      # Elasticsearch. Ignored on subsequent runs.
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+      # Use single node discovery in order to disable production mode and avoid bootstrap checks.
+      # see: https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html
+      discovery.type: single-node
+    networks:
+      - elk
+    restart: unless-stopped
+
+  logstash:
+    build:
+      context: ELK/logstash/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./ELK/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro,Z
+      - ./ELK/logstash/pipeline:/usr/share/logstash/pipeline:ro,Z
+    ports:
+      - 5044:5044
+      - 50000:50000/tcp
+      - 50000:50000/udp
+      - 9600:9600
+    environment:
+      LS_JAVA_OPTS: -Xms256m -Xmx256m
+      LOGSTASH_INTERNAL_PASSWORD: ${LOGSTASH_INTERNAL_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  kibana:
+    build:
+      context: ELK/kibana/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    volumes:
+      - ./ELK/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+    ports:
+      - 5601:5601
+    environment:
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  filebeat:
+    build:
+      context: ELK/filebeat/
+      args:
+        ELASTIC_VERSION: ${ELASTIC_VERSION}
+    # Run as 'root' instead of 'filebeat' (uid 1000) to allow reading
+    # 'docker.sock' and the host's filesystem.
+    user: root
+    command:
+      # Log to stderr.
+      - -e
+      # Disable config file permissions checks. Allows mounting
+      # 'config/filebeat.yml' even if it's not owned by root.
+      # see: https://www.elastic.co/guide/en/beats/libbeat/current/config-file-permissions.html
+      - --strict.perms=false
+    volumes:
+      - ./ELK/filebeat/config/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro,Z
+      - ~/backend/data/nginx/logs:/var/log/nginx
+    environment:
+      FILEBEAT_INTERNAL_PASSWORD: ${FILEBEAT_INTERNAL_PASSWORD:-}
+      BEATS_SYSTEM_PASSWORD: ${BEATS_SYSTEM_PASSWORD:-}
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  redis_insight:
+    image: redislabs/redisinsight:latest
+    container_name: redis_insight
+    ports: 
+      - "8001:8001"
+    restart: always
+
+  cadvisor:
+      image: gcr.io/cadvisor/cadvisor:latest
+      container_name: cadvisor
+      ports:
+      - 8080:8080
+      volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      depends_on:
+      - prometheus
+      
+  redis:
+      image: redis:latest
+      container_name: redis
+      ports:
+        - 6379:6379
+      volumes:
+        - ./backend/data/redis/data:/data
+        - ./backend/data/redis/conf/redis.conf:/usr/local/conf/redis.conf
+      labels:
+        - "name=redis"
+        - "mode=standalone"
+      restart: always
+      command: redis-server /usr/local/conf/redis.conf
+      networks:
+        - witchnet
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - './backend/data/grafana/env.grafana'
+    volumes:
+      - './backend/data/grafana:/var/lib/grafana'
+    depends_on:
+      - prometheus
+    user: root  
+    restart: always
+    networks:
+      - witchnet
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - './backend/data/nginx/conf.d:/etc/nginx/conf.d'
+      - './backend/data/nginx/nginx.conf:/etc/nginx/nginx.conf'
+      - './backend/data/nginx/html:/usr/share/nginx/html'
+      - './backend/data/nginx/logs:/var/log/nginx'
+    restart: always
+    networks:
+      - witchnet
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - 9100:9100
+    networks:
+      - witchnet
+      
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./backend/data/prometheus/config:/etc/prometheus
+      - ./backend/data/prometheus/volume:/prometheus
+    ports:
+      - 9090:9090
+    command:
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.path=/prometheus'
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    user: root
+    restart: always
+    networks:
+      - witchnet
+
+  api:
+    build:
+      context: backend/data/django_project
+      dockerfile: Dockerfile
+    container_name: api
+    command: >
+      sh -c "python manage.py makemigrations &&
+            python manage.py migrate &&
+            gunicorn --bind 0:5000 config.wsgi:application" 
+    ports:
+      - "5000:5000"
+    restart: always
+    networks:
+      - witchnet
+
+networks:
+  witchnet:
+    driver: bridge
+  elk:
+    driver: bridge
+
+volumes:
+  elasticsearch:

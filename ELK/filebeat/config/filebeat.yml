@@ -1,0 +1,13 @@
+filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /var/log/nginx/*.log
+
+output.logstash:
+  hosts: ["34.195.3.25:5044"]
+
+setup.kibana:
+  host: "http://34.195.3.25:5601"
+  username: "elastic"
+  password: "hhselastic"

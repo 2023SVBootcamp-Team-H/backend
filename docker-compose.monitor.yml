@@ -1,0 +1,54 @@
+# Deploy Version
+version: '3.7'
+services:
+  grafana:
+      image: grafana/grafana:latest
+      container_name: grafana
+      ports:
+        - "3000:3000"
+      env_file:
+        # Server
+        - './backend/data/grafana/env.grafana'
+        
+      volumes:
+        # Server
+        - './backend/data/grafana:/var/lib/grafana'
+      depends_on:
+        - prometheus
+      user: root  
+      restart: always
+      networks:
+        - witches_monitoring
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      # Server
+      - ./backend/data/prometheus/config:/etc/prometheus
+      - ./backend/data/prometheus/volume:/prometheus
+    ports:
+      - 9090:9090
+    command: # web.enalbe-lifecycle은 api 재시작없이 설정파일들을 reload 할 수 있게 해줌
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.path=/prometheus'
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    user: root
+    restart: always
+    networks:
+      - witches_monitoring
+  cadvisor:
+      image: gcr.io/cadvisor/cadvisor:latest
+      container_name: cadvisor
+      ports:
+      - 8080:8080
+      volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      
+networks:
+  witches_monitoring:
+    driver: bridge
